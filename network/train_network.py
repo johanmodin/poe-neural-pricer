@@ -19,8 +19,8 @@ EPOCHS = 1000
 
 MAX_VALUE_CUT_OFF = 20000
 
-BATCH_SIZE = 128
-TRAIN_FILES_PER_RUN = 3
+BATCH_SIZE = 64
+TRAIN_FILES_PER_RUN = 9
 N_VAL_DATA_FILES = 1
 
 
@@ -29,6 +29,24 @@ class Trainer():
         self.input_size = input_size
         self.name = name
         self.loading_model = loading_model
+        self.std = 0
+        self.mean = 0
+
+    #def normalize_target(self, target):
+    #    return target/MAX_VALUE_CUT_OFF
+
+    def get_normalization_values(self, X):
+        self.mean = np.mean(X, axis = 0)
+        self.std = np.std(X, axis = 0)
+        print('Mean: %s' % self.mean)
+        print('Std: %s' % self.std)
+        return X
+
+    def normalize_X(self, X):
+        X -= self.mean
+        X /= self.std
+        X = np.nan_to_num(X)
+        return X
 
     def train(self):
         if not os.path.exists(SAVE_DIR + 'logs/' + self.name):
@@ -53,6 +71,19 @@ class Trainer():
 
         training_files = os.listdir(DATA_DIR)
         print('Localized %s files for T&T' % len(training_files))
+
+        # Get normalization values
+        norm_data = []
+        for i in range(TRAIN_FILES_PER_RUN+N_VAL_DATA_FILES):
+            norm_data.extend([[d[0], d[1]] for d in np.load(
+                DATA_DIR + training_files[i]) if d[1] <= MAX_VALUE_CUT_OFF])
+        N_X = np.array([d[0] for d in norm_data])
+        self.get_normalization_values(N_X)
+        del norm_data
+        del N_X
+
+        np.save('mean-std.npy', (self.mean, self.std))
+
         # Get some data to validate on from the training data
         val_files = []
         for i in range(N_VAL_DATA_FILES):
@@ -63,13 +94,17 @@ class Trainer():
 
         val_data = []
         for i in range(len(val_files)):
-            val_data.extend([d for d in np.load(
+            val_data.extend([[d[0], d[1]] for d in np.load(
                 DATA_DIR + val_files[i]) if d[1] <= MAX_VALUE_CUT_OFF])
 
         files_per_file = int(len(val_data)/len(val_files))
 
-        V_X = np.array([d[0] for d in val_data])
+        V_X = self.normalize_X(np.array([d[0] for d in val_data]))
+        print('There should not be any nans here: %s' % V_X)
         V_Y = np.array([d[1] for d in val_data])
+        del val_data
+
+
         epoch = 0
         samples_trained = 0
         print('Starting run of %s epochs' % EPOCHS)
@@ -78,11 +113,11 @@ class Trainer():
 
             data = []
             for i in range(TRAIN_FILES_PER_RUN):
-                data.extend([d for d in np.load(DATA_DIR +
+                data.extend([[d[0], d[1]] for d in np.load(DATA_DIR +
                     training_files[np.random.randint(len(training_files))])
                     if d[1] <= MAX_VALUE_CUT_OFF])
 
-            X = np.array([d[0] for d in data])
+            X = self.normalize_X(np.array([d[0] for d in data]))
             Y = np.array([d[1] for d in data])
 
             m = 0

@@ -19,13 +19,12 @@ DEFAULT_LABEL_FILE = '\labels\classes'
 DEFAULT_DATA_DIR = '\saved_data\\'
 DEFAULT_ENCODED_DATA_DIR = 'E:\programmering\poe-scraper\\training_data\\'
 
-PULLS_PER_SAVE = 50
+PULLS_PER_SAVE = 10
 
 
-class DataRetriever(Controller):
-    def __init__(self, thread_id):
+class DataRetriever:
+    def __init__(self):
         self.location = os.path.dirname(os.path.realpath(__file__))
-        self.thread_id = thread_id
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
         self.currencyconverter = CurrencyConverter(league='Harbinger')
@@ -33,38 +32,39 @@ class DataRetriever(Controller):
         self.retriever = Retriever()
         self.encoder = Encoder(self._get_classes_path())
 
-    def collect(self, pulls):
-        item_count = 0
-        filtered_item_count = 0
-        ips = 0
+    def collect(self, pulls, start_id):
+        next_id = start_id
+        item_count, filtered_item_count, ips = 0, 0, 0
         start_time = time.time()
         filtered_data = []
         for i in range(pulls):
-            while next_id is None:
-                next_id = Controller.jobpool.get_id()
-                if next_id is None:
-                    time.sleep(1)
+            if next_id is None:
+                print('No more data to fetch, quitting.')
             last_id = next_id
+
             (data, next_id) = self.retriever.retrieve(next_id)
-            Controller.jobpool.put_id(next_id)
-            item_count += len(data)
             X_Y = self.filter.filter_items(data)
             filtered_data.extend(X_Y)
-
             self.encoder.fit([item_value_tuple[0] for item_value_tuple in X_Y])
 
-            if i % PULLS_PER_SAVE == 0:
-                encoded_data = self.encoder.encode(filtered_data)
-                np.save('%s\\%s\\%s.npy' % (self.location, DEFAULT_DATA_DIR, last_id),
-                        np.array(filtered_data))
-                np.save(DEFAULT_ENCODED_DATA_DIR + last_id + '.npy',
-                        np.array(encoded_f))
+            item_count += len(data)
+            filtered_item_count += len(X_Y)
+            ips = filtered_item_count/(time.time()-start_time)
+            if i != 0 and i % PULLS_PER_SAVE == 0:
+                np.save('%s\\%s\\%s.npy' % (self.location, DEFAULT_DATA_DIR, last_id), np.array(filtered_data))
                 filtered_data = []
-            filtered_item_count += len(filtered_item_count)
-            ips = filtered_item_count/(time.time()-start_Time)
+                print('Retriever saved data. Requested %s pages and collected %s items (%s eligible) at %.1f eligible items per second'
+                      % (i, item_count, filtered_item_count, ips))
             next_id = None
-        print('Thread #%s finished. Collected %s items (%s eligible) at %.1f eligible items per second'
-              % (self.thread_id, item_count, filtered_item_count, ips))
+        print('Retriever finished. Requested %s pages and collected %s items (%s eligible) at %.1f eligible items per second'
+              % (i, item_count, filtered_item_count, ips))
+
+    def encode(self, files):
+        for i in range(len(files)):
+            print('Encoding file %s' % (files[i]))
+            filtered_data = np.load('%s%s%s' % (self.location, DEFAULT_DATA_DIR, files[i]))
+            encoded_data = self.encoder.encode(filtered_data)
+            np.save(DEFAULT_ENCODED_DATA_DIR + files[i], encoded_data)
 
     def _get_next_id(self):
         value = self.config['retriever']['NextId']
@@ -81,6 +81,6 @@ class DataRetriever(Controller):
         value = self.config['encoder']['ClassesFile']
         if value is '':
             print('Notice: label class file not set, using default.')
-            return self.location + DEFAULT_LABEL_FILE + str(self.thread_id) + '.npy'
+            return self.location + DEFAULT_LABEL_FILE + '.npy'
         else:
-            return self.location + value + str(self.thread_id) + '.npy'
+            return self.location + value + '.npy'

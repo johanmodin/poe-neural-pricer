@@ -13,7 +13,6 @@ class Encoder:
         self.config.read('config.ini')
         self.encoders = {}
         self.param_descriptions = {}
-        self.keys_to_fit = {}
 
     def encode(self, X_Y):
         self.fullEncoder = self._read_encoder(self.classes_path)
@@ -26,7 +25,9 @@ class Encoder:
         encoded_X_Y = []
         encoded_array_length = len(list(self.fullEncoder.classes_))
         for item_nr in range(len(Xs)):
-            encoded = np.zeros(encoded_array_length).tolist()
+            # We encode our array with -1 to start with as that's our 'false'
+            # and almost all of our elements will be false
+            encoded = [-1 for n in range(encoded_array_length)]
             for key in Xs[item_nr]:
                 if key in self.param_descriptions:
                     if self.param_descriptions[key] == 'array':
@@ -39,36 +40,28 @@ class Encoder:
                 else:
                     encoded[self.fullEncoder.transform([key])[0]] = self._get_key_value(Xs[item_nr][key])
             # append the (encoded X, value) tuple
-            encoded_X_Y.append((encoded, X_Y[item_nr][1]))
-        return encoded_X_Y
+            encoded_X_Y.append((np.array(encoded).astype('float32'), np.array(X_Y[item_nr][1]).astype('float32')))
+        return np.array(encoded_X_Y)
 
     def fit(self, Xs):
         self.fullEncoder = self._read_encoder(self.classes_path)
         if self.encoders == {}:
             self._create_encoders()
-            self.keys_to_fit = {}
+        keys_to_fit = self._fit_encoders(Xs)
 
-        self._fit_encoders(Xs)
-
-        label_order = self._get_config_value('LabelOrder')
         classes = []
         if self.fullEncoder is not None:
             classes.extend(list(self.fullEncoder.classes_))
 
-        for key in label_order:
-            classes.extend(list(self.encoders[key].classes_))
-
-        for key in self.keys_to_fit:
+        for key in keys_to_fit:
             classes.extend(self.encoders[key].classes_)
 
         self.fullEncoder = preprocessing.LabelEncoder()
         self.fullEncoder.fit(classes)
         np.save(self.classes_path, self.fullEncoder.classes_)
 
-        print('Encoded %s mods and saved classes to file.'
+        print('Fitted to %s mods.'
               % len(list(self.fullEncoder.classes_)))
-
-        self.keys_to_fit = {}
 
     def _fit_encoders(self, Xs):
         # Someday this should be changed to not add duplicate mods.
@@ -77,6 +70,7 @@ class Encoder:
         # functionality to enable adding more mods to a loaded fullEncoder.
 
         # Also, break this function up into subfunctions. It looks horrible.
+        keys_to_fit = {}
         for item in Xs:
             for key in item:
                 if key in self.param_descriptions:
@@ -85,35 +79,34 @@ class Encoder:
 
                             # Remove all digits from the mods when we're encoding them
                             # to not get a lot of duplicate mods with different digit values
-                            if key in self.keys_to_fit:
-                                self.keys_to_fit[key].append(self._remove_digits(mod))
+                            if key in keys_to_fit:
+                                keys_to_fit[key].append(self._remove_digits(mod))
                             else:
-                                self.keys_to_fit[key] = [self._remove_digits(mod)]
+                                keys_to_fit[key] = [self._remove_digits(mod)]
                     elif self.param_descriptions[key] == 'string':
                         # Encodes strings like typeline (base item type)
-                        if key in self.keys_to_fit:
-                            self.keys_to_fit[key].append(self._remove_digits(item[key]))
+                        if key in keys_to_fit:
+                            keys_to_fit[key].append(self._remove_digits(item[key]))
                         else:
-                            self.keys_to_fit[key] = [self._remove_digits(item[key])]
+                            keys_to_fit[key] = [self._remove_digits(item[key])]
                 else:
-                    if 'others' in self.keys_to_fit:
-                        self.keys_to_fit['others'].append(key)
+                    if 'others' in keys_to_fit:
+                        keys_to_fit['others'].append(key)
                     else:
-                        self.keys_to_fit['others'] = [key]
-        for key in self.keys_to_fit:
+                        keys_to_fit['others'] = [key]
+        for key in keys_to_fit:
             if key in self.encoders:
-                self.encoders[key].fit(self.keys_to_fit[key])
+                self.encoders[key].fit(keys_to_fit[key])
             else:
                 self.encoders['others'].fit(key)
+        return keys_to_fit
 
     def _get_key_value(self, string):
         clean_string = str(string).lower()
         if clean_string == 'true':
-            #print('debug: %s cleaned to 1' % (string))
             return 1
         elif clean_string == 'false':
-            #print('debug: %s cleaned to 0' % (string))
-            return 0
+            return -1
         elif any(char.isdigit() for char in clean_string):
                 return self._extract_digits(clean_string)
         else:
