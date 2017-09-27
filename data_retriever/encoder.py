@@ -52,8 +52,7 @@ class Encoder:
 
     def fit(self, Xs):
         self.fullEncoder = self._read_encoder(self.classes_path)
-        if self.encoders == {}:
-            self._create_encoders()
+        self._create_encoders()
         keys_to_fit = self._fit_encoders(Xs)
 
         classes = []
