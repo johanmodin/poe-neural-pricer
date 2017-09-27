@@ -3,7 +3,7 @@
 
 # Downloads the first 512 bytes to quickly get next_change_id without
 # having to download the full page which takes ~7 seconds for me.
-# This may be used to multithread the dataretriever
+# This is used to multithread the dataretriever
 import socket
 import time
 def get_next_id(id):
