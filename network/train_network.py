@@ -23,30 +23,42 @@ BATCH_SIZE = 64
 TRAIN_FILES_PER_RUN = 9
 N_VAL_DATA_FILES = 1
 
+NORMALIZE_WITH_N_FILES = 15
 
 class Trainer():
     def __init__(self, input_size, name='default_name', loading_model=None):
         self.input_size = input_size
         self.name = name
         self.loading_model = loading_model
-        self.std = 0
-        self.mean = 0
+        self.x_std, self.y_std = 0, 0
+        self.x_mean, self.y_mean = 0, 0
 
     #def normalize_target(self, target):
     #    return target/MAX_VALUE_CUT_OFF
 
-    def get_normalization_values(self, X):
-        self.mean = np.mean(X, axis = 0)
-        self.std = np.std(X, axis = 0)
-        print('Mean: %s' % self.mean)
-        print('Std: %s' % self.std)
+    def get_normalization_values(self, X, y):
+        self.x_mean = np.mean(X, axis = 0)
+        self.x_std = np.std(X, axis = 0)
+        self.y_mean = np.mean(y, axis = 0)
+        self.y_std = np.std(y, axis = 0)
+        print('X Mean: %s' % self.x_mean)
+        print('X Std: %s' % self.x_std)
+        print('y Mean: %s' % self.y_mean)
+        print('y Std: %s' % self.y_std)
+
         return X
 
     def normalize_X(self, X):
-        X -= self.mean
-        X /= self.std
+        X -= self.x_mean
+        X /= self.x_std
         X = np.nan_to_num(X)
         return X
+
+    def normalize_y(self, y):
+        y -= self.y_mean
+        y /= self.y_std
+        y = np.nan_to_num(y)
+        return y
 
     def train(self):
         if not os.path.exists(SAVE_DIR + 'logs/' + self.name):
@@ -60,7 +72,7 @@ class Trainer():
             embeddings_freq=0, embeddings_layer_names=None,
             embeddings_metadata=None)
 
-        model = BasicDense(self.input_size)
+        model = BasicDense2(self.input_size)
         if self.loading_model is not None:
             model = load_model(os.path.join(SCRIPT_PATH, self.loading_model))
             print("Loaded model from disk")
@@ -74,15 +86,17 @@ class Trainer():
 
         # Get normalization values
         norm_data = []
-        for i in range(TRAIN_FILES_PER_RUN+N_VAL_DATA_FILES):
+        for i in range(NORMALIZE_WITH_N_FILES):
             norm_data.extend([[d[0], d[1]] for d in np.load(
                 DATA_DIR + training_files[i]) if d[1] <= MAX_VALUE_CUT_OFF])
         N_X = np.array([d[0] for d in norm_data])
-        self.get_normalization_values(N_X)
+        N_Y = np.array([d[1] for d in norm_data])
+        self.get_normalization_values(N_X, N_Y)
         del norm_data
         del N_X
+        del N_Y
 
-        np.save('mean-std.npy', (self.mean, self.std))
+        np.save('xm-xs-ym-ys.npy', (self.x_mean, self.x_std, self.y_mean, self.y_std))
 
         # Get some data to validate on from the training data
         val_files = []
