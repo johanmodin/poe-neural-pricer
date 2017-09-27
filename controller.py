@@ -16,7 +16,7 @@ class Controller:
         self.start_id = cfg['retriever']['NextId']
 
     def collect(self, iterations):
-        d = Dataretriever()
+        d = DataRetriever()
         d.collect(iterations, self.start_id)
 
     def encode(self, workers=4):
