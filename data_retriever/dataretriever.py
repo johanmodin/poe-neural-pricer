@@ -34,29 +34,31 @@ class DataRetriever:
 
     def collect(self, pulls, start_id):
         next_id = start_id
-        item_count, filtered_item_count, ips = 0, 0, 0
+        filtered_item_count, ips = 0, 0
         start_time = time.time()
         filtered_data = []
+        print('Initiating retrieving..')
         for i in range(pulls):
             if next_id is None:
                 print('No more data to fetch, quitting.')
             last_id = next_id
-            print('Retrieving %s (%s/%s). IPS: %.1f items/s' % (next_id, i, pulls, ips))
+
             (data, next_id) = self.retriever.retrieve(next_id)
             X_Y = self.filter.filter_items(data)
             filtered_data.extend(X_Y)
             self.encoder.fit([item_value_tuple[0] for item_value_tuple in X_Y])
 
-            item_count += len(data)
             filtered_item_count += len(X_Y)
             ips = filtered_item_count/(time.time()-start_time)
+
             if i != 0 and i % PULLS_PER_SAVE == 0:
                 np.save('%s\\%s\\%s.npy' % (self.location, DEFAULT_DATA_DIR, last_id), np.array(filtered_data))
                 filtered_data = []
-                print('Retriever saved data. Requested %s pages and collected %s items (%s eligible) at %.1f eligible items per second'
-                      % (i, item_count, filtered_item_count, ips))
-        print('Retriever finished. Requested %s pages and collected %s items (%s eligible) at %.1f eligible items per second'
-              % (i, item_count, filtered_item_count, ips))
+                print('Retriever saved data. Requested %s/%s pages and collected %s eligible items at %.1f items per second'
+                      % (i, pulls, filtered_item_count, ips))
+                print('Last retrieved next_change_id was: %s' % last_id)
+        print('Retriever finished. Requested %s pages and collected %s eligible items at %.1f items per second'
+              % (i, filtered_item_count, ips))
 
     def encode(self, files):
         for i in range(len(files)):
