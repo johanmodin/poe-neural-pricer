@@ -41,7 +41,7 @@ class DataRetriever:
             if next_id is None:
                 print('No more data to fetch, quitting.')
             last_id = next_id
-            print('Retrieving %s (%s/%s). IPS: %s' % (next_id, i, pulls, ips)
+            print('Retrieving %s (%s/%s). IPS: %.1f items/s' % (next_id, i, pulls, ips))
             (data, next_id) = self.retriever.retrieve(next_id)
             X_Y = self.filter.filter_items(data)
             filtered_data.extend(X_Y)
