@@ -1,16 +1,19 @@
-# Encodes/labels the retrieved data to integer arrays
-from sklearn import preprocessing
 import configparser
-import numpy as np
 import os
 
+import numpy as np
+from sklearn import preprocessing
 
+from .base_to_category_map import get_dict
+
+# Encodes/labels the retrieved data to integer arrays
 class Encoder:
     def __init__(self, classes_path):
         self.classes_path = classes_path
         self.fullEncoder = self._read_encoder(classes_path)
         self.config = configparser.ConfigParser()
         self.config.read('config.ini')
+        self.item_dict = get_dict()
         self.encoders = {}
         self.param_descriptions = {}
 
@@ -34,7 +37,11 @@ class Encoder:
                         for value in Xs[item_nr][key]:
                             encoded[self.fullEncoder.transform([self._remove_digits(value)])[0]] = self._extract_digits(value)
                     elif self.param_descriptions[key] == 'string':
-                        encoded[self.fullEncoder.transform([Xs[item_nr][key]])[0]] = 1
+                        # Encodes the typeline param -> item category
+                        # This way we're making 1812 possible item bases
+                        # fit into 33 possible categories
+                        encoded[self.fullEncoder.transform([self.item_dict[Xs[item_nr][key]]])[0]] = 1
+                        print('Transformed %s to category %s which corresponds to %s' % (Xs[item_nr][key], self.item_dict[Xs[item_nr][key]], self.fullEncoder.transform([self.item_dict[Xs[item_nr][key]]])[0]))
                     else:
                         print('Error: Could not find encoder for key %s' % key)
                 else:
@@ -64,31 +71,27 @@ class Encoder:
               % len(list(self.fullEncoder.classes_)))
 
     def _fit_encoders(self, Xs):
-        # Someday this should be changed to not add duplicate mods.
-        # It's not an issue for the labeller but it's not nice and uses
-        # unnecessarily much RAM. This probably goes hand in hand with adding
-        # functionality to enable adding more mods to a loaded fullEncoder.
-
-        # Also, break this function up into subfunctions. It looks horrible.
+        # Break this function up. It looks horrible.
         keys_to_fit = {}
         for item in Xs:
             for key in item:
                 if key in self.param_descriptions:
                     if self.param_descriptions[key] == 'array':
                         for mod in item[key]:
-
                             # Remove all digits from the mods when we're encoding them
-                            # to not get a lot of duplicate mods with different digit values
+                            # to avoid getting a lot of duplicate mods with different digit values
                             if key in keys_to_fit:
                                 keys_to_fit[key].append(self._remove_digits(mod))
                             else:
                                 keys_to_fit[key] = [self._remove_digits(mod)]
                     elif self.param_descriptions[key] == 'string':
-                        # Encodes strings like typeline (base item type)
+                        # Fits strings, here used for typeline (base item type)
+                        # We now use our item dict to get the item category
+                        # from the typeline parameter.
                         if key in keys_to_fit:
-                            keys_to_fit[key].append(self._remove_digits(item[key]))
+                            keys_to_fit[key].append(self.item_dict[item[key]])
                         else:
-                            keys_to_fit[key] = [self._remove_digits(item[key])]
+                            keys_to_fit[key] = [self.item_dict[item[key]]]
                 else:
                     if 'others' in keys_to_fit:
                         keys_to_fit['others'].append(key)
