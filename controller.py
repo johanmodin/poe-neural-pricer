@@ -30,9 +30,9 @@ class Controller:
             worker_index += 1
             file_counter += 1
         pool = mp.Pool(workers)
-        pool.map(Worker._worker_collect, worker_args)
+        pool.map(EncodeWorker.worker_collect, worker_args)
 
-class Worker:
-    def _worker_collect(ids):
+class EncodeWorker:
+    def worker_collect(ids):
         d = DataRetriever()
         d.encode(ids)

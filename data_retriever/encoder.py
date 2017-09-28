@@ -41,7 +41,6 @@ class Encoder:
                         # This way we're making 1812 possible item bases
                         # fit into 33 possible categories
                         encoded[self.fullEncoder.transform([self.item_dict[Xs[item_nr][key]]])[0]] = 1
-                        print('Transformed %s to category %s which corresponds to %s' % (Xs[item_nr][key], self.item_dict[Xs[item_nr][key]], self.fullEncoder.transform([self.item_dict[Xs[item_nr][key]]])[0]))
                     else:
                         print('Error: Could not find encoder for key %s' % key)
                 else:

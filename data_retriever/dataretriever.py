@@ -29,9 +29,9 @@ class DataRetriever:
         self.filter = Filter(self.currencyconverter)
         self.retriever = Retriever()
         self.encoder = Encoder(self._get_classes_path())
-        self.pool = mp.Pool(SIMULTANEOUS_REQUESTERS)
 
     def collect(self, pulls, start_id):
+        pool = mp.Pool(SIMULTANEOUS_REQUESTERS)
         next_id = start_id
         filtered_item_count, ips = 0, 0
         start_time = time.time()
@@ -45,7 +45,7 @@ class DataRetriever:
             next_ids = self._request_ids(next_id)
             next_id = next_ids[-1]
 
-            data = self._request_data(next_ids)
+            data = self._request_data(next_ids, pool)
             if data == None:
                 print('We reached the end of the stash updates. Exiting.')
                 sys.exit(0)
@@ -80,12 +80,12 @@ class DataRetriever:
             id_list.append(get_next_id(id_list[i]))
         return id_list[1:]
 
-    def _request_data(self, next_ids):
+    def _request_data(self, next_ids, pool):
         base_request_time = time.time()
         worker_args = []
         for i in range(SIMULTANEOUS_REQUESTERS):
             worker_args.append((next_ids[i], base_request_time + i*TIME_BETWEEN_REQUESTS))
-        data = self.pool.map(Worker.request_data, worker_args)
+        data = pool.map(RequestWorker.request_data, worker_args)
         if None in data:
             return None
         j = json.dumps(data)
@@ -105,7 +105,7 @@ class DataRetriever:
         else:
             return self.location + value + '.npy'
 
-class Worker:
+class RequestWorker:
     def request_data(args):
         next_id = args[0]
         request_time = args[1]
