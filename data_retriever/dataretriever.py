@@ -88,7 +88,6 @@ class DataRetriever:
         data = pool.map(RequestWorker.request_data, worker_args)
         if None in data:
             return None
-        j = json.dumps(data)
         merged_data = [item for sublist in data for item in sublist]
         return merged_data
 
