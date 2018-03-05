@@ -67,7 +67,7 @@ class Trainer():
             os.makedirs(SAVE_DIR + 'models/' + self.name)
 
         cb_tensorboard = keras.callbacks.TensorBoard(
-            log_dir='E:/programmering/poe-scraper/logs/' + self.name,
+            log_dir= SAVE_DIR + '/logs/ + self.name,
             histogram_freq=0, write_graph=True, write_images=True,
             embeddings_freq=0, embeddings_layer_names=None,
             embeddings_metadata=None)
