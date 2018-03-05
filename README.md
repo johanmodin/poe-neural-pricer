@@ -25,6 +25,6 @@ First and foremost, set up your config.ini to collect the correct items, specify
 
 For collecting the items specified in config.ini, create a ` Controller c` and run `c.collect(iterations)`.
 
-For encoding the collected items, create a `Controller c` and run `c.encode(workers)`.
+For encoding the collected items, create a `Controller c` and run `c.encode(workers=4)`.
 
 To train a model, specify the model in /network/train_network.py and your data_dir and save_dir as well as the parameters for how many files are to be concurrently held in memory, etc. Run `t = Trainer('your_model_name')` or `t = Trainer(loading_model='my_already_trained_model')` to start the process of training.
