@@ -3,7 +3,6 @@ import multiprocessing as mp
 import os
 
 from data_retriever.dataretriever import DataRetriever
-from network.train_network import Trainer
 
 DEFAULT_DATA_DIR = '\data_retriever\saved_data\\'
 
