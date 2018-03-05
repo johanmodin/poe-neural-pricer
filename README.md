@@ -1,4 +1,4 @@
-# poe-scraper 
+# poe-neural-pricer 
 
 ###### Not currently maintained.
 
