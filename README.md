@@ -1,9 +1,12 @@
-# poe-scraper
-This application collects active Path of Exile trade listings for specified items. 
+# poe-scraper 
+
+###### Not currently maintained.
+
+This application collects active Path of Exile trade listings for specified items with the goal of being able to price your items instantaneously. 
 
 The idea behind the project was to gather enough data on items and their prices to be able to train a neural network model to learn what combinations of item attributes and their respective values that made an item valuable. The end goal for the project was to be able to price items. Especially, it was meant to be able to predict rare items' prices as they are usually very hard to price due to the many niche uses that rare items may allow for specific builds.
 
-###### It is not currently being updated.
+Currently, the network does not render in very useful pricing results. My opinion on how to fix this is detailed below.
 
 ### Details
 The application downloads specified items that are listed on PoE. The items' prices are then converted to a common currency, namely Chaos orbs, by downloading the current currency rates for the specified league. 
