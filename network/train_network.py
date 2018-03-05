@@ -26,8 +26,8 @@ N_VAL_DATA_FILES = 1
 NORMALIZE_WITH_N_FILES = 15
 
 class Trainer():
-    def __init__(self, input_size, name='default_name', loading_model=None):
-        self.input_size = input_size
+    def __init__(self, name='default_name', loading_model=None):
+        self.model = BasicDense2()
         self.name = name
         self.loading_model = loading_model
         self.x_std, self.y_std = 0, 0
@@ -72,9 +72,9 @@ class Trainer():
             embeddings_freq=0, embeddings_layer_names=None,
             embeddings_metadata=None)
 
-        model = BasicDense2(self.input_size)
+        
         if self.loading_model is not None:
-            model = load_model(os.path.join(SCRIPT_PATH, self.loading_model))
+            self.model = load_model(os.path.join(SCRIPT_PATH, self.loading_model))
             print("Loaded model from disk")
 
         model_train_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -142,7 +142,7 @@ class Trainer():
                 if value < n:
                     n = value
             print('Y - Max: %s, min: %s' % (m, n))
-            model.fit(X, Y, batch_size=BATCH_SIZE, epochs=1, shuffle=True,
+            self.model.fit(X, Y, batch_size=BATCH_SIZE, epochs=1, shuffle=True,
                       validation_data=(V_X, V_Y), callbacks=[cb_tensorboard])
 
             samples_trained += len(X)
@@ -151,7 +151,7 @@ class Trainer():
             epoch = int(samples_trained/(len(training_files)*files_per_file))
             print('Saving model as %s-%s-EPOCH-%s' %
                   (self.name, model_train_time, epoch))
-            model.save(SAVE_DIR + 'models/' + self.name + '/' +
+            self.model.save(SAVE_DIR + 'models/' + self.name + '/' +
                        '%s-%s-EPOCH-%s' % (self.name, model_train_time, epoch))
 
         print('Completed training %s' % datetime.datetime.now())
