@@ -18,3 +18,9 @@ Future improvements that could make this tool more useful:
 * Use models with, for the task, better architectures than the current one (which is just sort of a default model). Perhaps  convolutional layers could be used if the feature arrays were differently arranged.
 * "Ignore item listings that are older than x"-option. Currently, the db contains listings that are years old and which likely corrupts the data.
 * Unify how item attributes are encoded. Some are simply true/false whilst others contain values, some with several values, etc.
+* Better means of balancing data
+
+### Usage
+For collecting the items specified in config.ini, create a Controller c and run c.collect(iterations)
+For encoding the collected items, create a Controller c and run c.encode(workers)
+To train a model, specify the model in /network/train_network.py and your data_dir and save_dir as well as the parameters for how many files are to be concurrently held in memory, etc. Run t = Trainer('your_model_name') or t = Trainer(loading_model='my_already_trained_model') to start the process of training.
