@@ -8,7 +8,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.models import Model
 
 
-def BasicDense(n_features):
+def BasicDense(n_features=500):
 
     model = Sequential()
 
