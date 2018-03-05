@@ -12,8 +12,8 @@ import math
 from random import shuffle, randint
 import time
 
-DATA_DIR = 'E:/programmering/poe-scraper/training_data/'
-SAVE_DIR = 'E:/programmering/poe-scraper/'
+DATA_DIR = '/training_data/'
+SAVE_DIR = '/network_output/'
 
 EPOCHS = 1000
 
