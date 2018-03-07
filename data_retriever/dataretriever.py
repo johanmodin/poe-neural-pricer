@@ -14,7 +14,7 @@ from .get_next_id import get_next_id
 
 DEFAULT_LABEL_FILE = '\labels\classes'
 DEFAULT_DATA_DIR = '\saved_data\\'
-DEFAULT_ENCODED_DATA_DIR = 'E:\programmering\poe-scraper\\training_data\\'
+DEFAULT_ENCODED_DATA_DIR = '\encoded_data'
 
 PULLS_PER_SAVE = 10
 SIMULTANEOUS_REQUESTERS = 6
